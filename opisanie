@@ -1,0 +1,123 @@
+npm create vue@latest
+
+cd название_проекта
+npm install
+npm run dev
+
+в routes index.js - routes [тут]:
+{
+      path: '/',
+      component: HomeView
+} и другие пути /main /login и тд
+
+
+создать папку view для страниц + импорт их в index.js routes
+
+в app.vue - <template>
+    <router-view />
+</template>
++ стили
+
+у форм добавлять @submit.prevent=" "
+
+у каждой страницы:
+import { ref, onMounted } from 'vue' - для превращения переменной в .value + для действия при изменении на странице
+import { useRouter } from 'vue-router' - роутер
+import {register} from '../services/api' - импорт функций апишки
+
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+
+
+onMounted(async () =>{
+    products.value =
+    await getProducts()
+})    - обновление товаров
+
+в index.html можно импортировать линки на стили
+
+
+
+
+
+// services/api.js
+const HOST = 'http://localhost:3000';
+
+// Общая функция для обработки fetch запросов
+async function fetchWithErrorHandling(url, options = {}) {
+    const response = await fetch(url, options);
+    
+    // Если статус успешный (2xx)
+    if (response.ok) {
+        // Если ответ пустой (204 No Content)
+        if (response.status === 204) {
+            return null;
+        }
+        return response.json();
+    }
+    
+    // Если статус ошибки (4xx, 5xx)
+    let errorData = {};
+    try {
+        errorData = await response.json();
+    } catch (e) {
+        // Если не удалось распарсить JSON, пробуем получить текст
+        try {
+            const text = await response.text();
+            errorData = { message: text || `HTTP ${response.status}: ${response.statusText}` };
+        } catch (e2) {
+            errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
+    }
+    
+    // Создаем объект ошибки с дополнительной информацией
+    const error = new Error(errorData.message || errorData.error || `Ошибка ${response.status}`);
+    error.response = {
+        status: response.status,
+        data: errorData
+    };
+    error.status = response.status;
+    error.data = errorData;
+    
+    // Логируем для отладки
+    console.error(`❌ API ошибка ${response.status}:`, errorData);
+    
+    throw error;
+}
+
+// GET запросы
+export async function getProducts() {
+    return fetchWithErrorHandling(`${HOST}/products`);
+}
+
+export async function getProduct(id) {
+    return fetchWithErrorHandling(`${HOST}/products/${id}`);
+}
+
+// POST запросы
+export async function register(data) {
+    return fetchWithErrorHandling(`${HOST}/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+}
+
+export async function login(data) {
+    return fetchWithErrorHandling(`${HOST}/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+}
+
+export async function logout() {
+    return fetchWithErrorHandling(`${HOST}/logout`, {
+        method: 'POST'
+    });
+}
